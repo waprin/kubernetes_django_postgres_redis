@@ -103,6 +103,9 @@ POSTGRES_SERVICE_HOST, REDIS_MASTER_SERVICE_HOST, and REDIS_SLAVE_SERIVCE_HOST w
 runnig locally. When running on Kubernetes these variables will be automatically populated. See 
 guestbook/mysite/settings.py for more detail.
 
+kubernetes_config/frontend.yaml also comments out the Secret mounts. Once you're ready to set NODB to 0,  make sure
+you create the secrets (described below) then re-create the frontend replication controller with the secrets mounted
+config uncommented.
 
 If you want to emulate the Kubernetes environment locally, you can use env.template as a starting point for a file that 
 can export these environment variables locally. Once it's created, you can source it to add them to your local 

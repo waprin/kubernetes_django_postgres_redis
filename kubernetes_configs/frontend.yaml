@@ -37,20 +37,22 @@ spec:
       - name: guestbook
         # Replace  with your project ID or use `make template`
         image: gcr.io/$GCLOUD_PROJECT/guestbook
+
         # This setting makes nodes pull the docker image every time before
         # starting the pod. This is useful when debugging, but should be turned
         # off in production.
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
-        volumeMounts:
-        - name: secrets
-          mountPath: /etc/secrets
-          readOnly: true
-      volumes:
-      - name: secrets
-        secret:
-          secretName: db-passwords
+        # uncomment the following lines with NODB set to 0, so you can mount the DB secrest
+        #volumeMounts:
+        #- name: secrets
+        #  mountPath: /etc/secrets
+        #  readOnly: true
+      #volumes:
+      #- name: secrets
+      #  secret:
+      #    secretName: db-passwords
 
 ---
 
