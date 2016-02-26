@@ -54,10 +54,8 @@ for your project. The provided link will enable all necessary APIs, but if you w
 
 1. Create a cluster for the bookshelf application:
 
-    `gcloud container clusters create guestbook \
-        --scope "https://www.googleapis.com/auth/userinfo.email","cloud-platform" \
-        --num-nodes 2
-    gcloud container clusters get-credentials guestbook`
+    $ gcloud container clusters create guestbook --scopes "https://www.googleapis.com/auth/userinfo.email","cloud-platform" --num-nodes 2
+    $ gcloud container clusters get-credentials guestbook`
     
 The get-credentials commands initializes the kubectl CLI tool with the cluster you just created.    
 
