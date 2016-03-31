@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: gcr.io/$GCLOUD_PROJECT/postgres-pw
+        image: waprin/postgres_image
         # disable this in production
         imagePullPolicy: Always
         ports:
