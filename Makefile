@@ -20,6 +20,7 @@ MIN=2
 MAX=15
 TARGET=50
 RC=frontend
+FRONTEND_POD_NAME=$(shell kubectl get pods | grep frontend -m 1 | awk '{print $$1}' )
 
 .PHONY: all
 all: deploy
@@ -68,16 +69,9 @@ autoscale-on:
 	  --scale-based-on-cpu --target-cpu-utilization $(shell echo "scale=2; $(TARGET)/100" | bc)
 	kubectl autoscale rc $(RC) --min=$(MIN) --max=$(MAX) --cpu-percent=$(TARGET)
 
-.PHONY: db-setup
-db-setup:
-	POSTGRES_POD_NAME=$(shell kubectl get pods | grep postgres | awk '{print $$1}')
-	kubectl exec $(POSTGRES_POD_NAME) -- /init_db.sh
-
 .PHONY: migrations
 migrations:
-	FRONTEND_POD_NAME=$(shell kubectl get pods | grep frontend -m 1 | awk '{print $$1}' )
 	kubectl exec $(FRONTEND_POD_NAME) -- python /app/manage.py migrate
-
 
 .PHONY: delete
 delete:

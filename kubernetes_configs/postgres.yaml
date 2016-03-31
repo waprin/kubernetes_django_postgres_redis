@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: waprin/postgres_image
+        image: waprin/django_postgres
         # disable this in production
         imagePullPolicy: Always
         ports:
