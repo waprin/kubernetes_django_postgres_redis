@@ -6,7 +6,7 @@ supported by Google.
 Since this project demonstrates deploying Postgres and Redis to the cluster, it's slightly involved. For a simpler
 example of Django on Container Engine/Kubernetes, try 
 
-    github.org/GoogleCloudPlatform/python-docs-samples/container_engine/django_tutorial
+    https://github.com/GoogleCloudPlatform/python-docs-samples/tree/master/container_engine/django_tutorial
  
  which also deploys Django to  Kubernetes but uses a CloudSQL managed MySQL database, no cache, no 
 secrets, and does not demonstrate autoscaling.
@@ -15,6 +15,16 @@ This repository is an example of how to run a [Django](https://www.djangoproject
 app on Google Container Engine. It was created to go with a slide deck created here.
 
 https://speakerdeck.com/waprin/deploying-django-on-kubernetes
+
+and you can watch the talk here:
+
+https://www.youtube.com/watch?v=HKKUgWuIZro
+
+There is now also an associated Medium series where I go into more detail about why you would run
+Django on Kubernetes and how to follow this README:
+
+https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-kubernetes-9ee28e7a146
+
 
 This project walks through setting up this project on a Google Container Engine Kubernetes cluster. These 
 instructions should work on other Kubernetes platforms with some adjustments. should also deploy
@@ -62,6 +72,12 @@ The get-credentials commands initializes the kubectl CLI tool with the cluster y
 Alternatively, you can use the Makefile:
     
     make create-cluster
+    
+Troubleshooting note, if you see the following error:
+
+"Project <project_name> is not fully initialized with the default service accounts."
+
+Wait a few minutes and try again.
 
 ### A note about cost
 
