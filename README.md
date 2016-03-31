@@ -118,7 +118,7 @@ POSTGRES_SERVICE_HOST, REDIS_MASTER_SERVICE_HOST, and REDIS_SLAVE_SERIVCE_HOST w
 runnig locally. When running on Kubernetes these variables will be automatically populated. See 
 guestbook/mysite/settings.py for more detail.
 
-kubernetes_config/frontend.yaml also comments out the Secret mounts. Once you're ready to set NODB to 0,  make sure
+kubernetes_configs/frontend.yaml also comments out the Secret mounts. Once you're ready to set NODB to 0,  make sure
 you create the secrets (described below) then re-create the frontend replication controller with the secrets mounted
 config uncommented.
 
@@ -173,7 +173,7 @@ Alternatively, this can be done using
 ## Deploying the frontend to Kubernetes
 
 The Django application is represented  in Kubernetes config, called `frontend`. First, replace the 
-GCLOUD_PROJECT in `kubernetes_config/frontend.yaml` with your project ID. Alternatively, run `make template`, which 
+GCLOUD_PROJECT in `kubernetes_configs/frontend.yaml` with your project ID. Alternatively, run `make template`, which 
 should automatically populate the GCLOUD_PROJECT environment variable with your `gcloud config` settings, and replace
 $GCLOUD_PROJECT in the kubernets config tmplates with your actual project name.
 
@@ -187,7 +187,7 @@ pushed to a Docker image registry that Kubernetes can pull from. One option is D
     make build
     make push
 
-Once the image is built, it can be deployed in a Kubernetes pod. kubernetes_config/frontend.yalm contains the 
+Once the image is built, it can be deployed in a Kubernetes pod. kubernetes_configs/frontend.yalm contains the 
 Replication Controller to spin up Pods with this image, as well as a Service with an external load balancer. However,
 the frontend depends on secret passwords for the database, so before it's deployed, a Kubernetes Secret resource with
  your database passwords must be created.
@@ -214,7 +214,7 @@ the frontend depends on secret passwords for the database, so before it's deploy
  
 ### Create the frontend Service and Replication Controller
  
-    kubectl create -f kubernetes_config/frontend.yaml
+    kubectl create -f kubernetes_configs/frontend.yaml
     
 Alternatively this create set can be done using the Makefile
     
@@ -250,7 +250,7 @@ which can also be done with the `make update` command.
 
 Since the Redis cluster has no volumes or secrets, it's pretty easy to setup:
 
-    kubectl create -f kubernetes_config/redis_cluster.yaml
+    kubectl create -f kubernetes_configs/redis_cluster.yaml
 
 This creates a redis-master read/write service and redis-slave service. The images used are configured to properly 
 replicate from the master to the slaves.
@@ -270,7 +270,7 @@ using a GCE persistent disk:
 or
     make disk
 
-Edit `kubernetes_config/postgres.yaml` volume name to match the name of the disk you just created, if different.
+Edit `kubernetes_configs/postgres.yaml` volume name to match the name of the disk you just created, if different.
 
 For Postgres, the secrets need to get populated and a script to initialize the database needs to be added, so a image
 should be built:
@@ -281,7 +281,7 @@ should be built:
     
 Finally, you should be able to create the PostgreSQL service and pod.
 
-    kubectl create -f kubernetes_config/postgres.yaml
+    kubectl create -f kubernetes_configs/postgres.yaml
     
 Only one pod can read and write to a GCE disk, so the PostgreSQL replicaiton controller is set to control 1 pod. 
 Don't scale more instances of the Postgres POD. 
@@ -361,7 +361,7 @@ build the image:
 
 Then create the Replication Controller and scale some clients: 
   
-    kubectl create -f kubernetes_config/load_tester.yaml
+    kubectl create -f kubernetes_configs/load_tester.yaml
     kubectl scale rc load --replicas=20
   
 to generate load. Then
