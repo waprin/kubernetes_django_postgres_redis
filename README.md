@@ -25,6 +25,9 @@ Django on Kubernetes and how to follow this README:
 
 https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-kubernetes-9ee28e7a146
 
+part 2:
+https://medium.com/@waprin/deploying-django-postgres-and-redis-containers-to-kubernetes-part-2-b287f7970a33
+
 
 This project walks through setting up this project on a Google Container Engine Kubernetes cluster. These 
 instructions should work on other Kubernetes platforms with some adjustments. should also deploy
