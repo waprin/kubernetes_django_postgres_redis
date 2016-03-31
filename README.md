@@ -62,7 +62,8 @@ for your project. The provided link will enable all necessary APIs, but if you w
         $ curl https://sdk.cloud.google.com | bash 
         $ gcloud init
 
-1. Create a cluster for the bookshelf application:
+1. Create a cluster for the bookshelf application
+
 
     $ gcloud container clusters create guestbook --scopes "https://www.googleapis.com/auth/userinfo.email","cloud-platform" --num-nodes 2
     $ gcloud container clusters get-credentials guestbook`
