@@ -133,6 +133,10 @@ Don't check the file with your environment variable values into version control.
 
 ## Running locally
 
+Enter the guestbook directory
+    
+    cd guestbook
+
 First make sure you have Django installed. It's recommended you do so in a 
 [virtualenv](https://virtualenv.pypa.io/en/latest/). The requirements.txt
 contains just the Django dependency.
@@ -142,7 +146,6 @@ contains just the Django dependency.
 The app can be run locally the same way as any other Django app. 
 
     # disable Postgres and Redis until we set them up
-    cd guestbook
     export NODB=1
     python manage.py runserver
 
