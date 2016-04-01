@@ -45,8 +45,8 @@ template:
 
 .PHONY: push
 push:
-    docker build -t gcr.io/$(GCLOUD_PROJECT)/guestbook .
-    gcloud docker push gcr.io/$(GCLOUD_PROJECT)/guestbook
+	docker build -t gcr.io/$(GCLOUD_PROJECT)/guestbook .
+	gcloud docker push gcr.io/$(GCLOUD_PROJECT)/guestbook
 
 .PHONY: deploy
 deploy: push template
@@ -54,7 +54,7 @@ deploy: push template
 
 .PHONY: update
 update:
-	kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook
+	kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook:latest
 
 .PHONY: disk
 disk:
