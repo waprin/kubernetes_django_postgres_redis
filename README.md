@@ -8,7 +8,7 @@ example of Django on Container Engine/Kubernetes, try
 
     https://github.com/GoogleCloudPlatform/python-docs-samples/tree/master/container_engine/django_tutorial
  
- which also deploys Django to  Kubernetes but uses a CloudSQL managed MySQL database, no cache, no 
+which also deploys Django to Kubernetes but uses a CloudSQL managed MySQL database, no cache, no 
 secrets, and does not demonstrate autoscaling.
 
 This repository is an example of how to run a [Django](https://www.djangoproject.com/) 
@@ -27,12 +27,12 @@ https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-ku
 
 
 This project walks through setting up this project on a Google Container Engine Kubernetes cluster. These 
-instructions should work on other Kubernetes platforms with some adjustments. should also deploy
- on other Kubernetes providers besides Google Container. Specifically, cluster creation steps, disks, load balancers, 
-, cloud storage options, and node autoscalers should get replaced by their equivalents on your platform. 
+instructions should work on other Kubernetes platforms with some adjustments and should also deploy
+on other Kubernetes providers besides Google Container. Specifically, cluster creation steps, disks, load balancers, 
+cloud storage options, and node autoscalers should get replaced by their equivalents on your platform. 
  
 This project demonstrates how to create a PostgreSQL database and Redis cache within your cluster. It also contains
- an image to simulate load on your cluster to demonstrate autoscaling. The app is inspired by the 
+an image to simulate load on your cluster to demonstrate autoscaling. The app is inspired by the 
 [PHP-Redis Guestbook example](https://github.com/kubernetes/kubernetes/tree/master/examples/guestbook/php-redis).
 
 Please submit any code or doc issues to the issue tracker!
@@ -54,19 +54,27 @@ There are more Makefiles in sub-directories to help build and push specific imag
 
 1. [Enable billing](https://console.cloud.google.com/project/_/settings) for your project.
 
-1. [Enable APIs](https://console.cloud.google.com/flows/enableapi?apiid=datastore,pubsub,storage_api,logging,plus) 
-for your project. The provided link will enable all necessary APIs, but if you wish to do so manually you will need Datastore, Pub/Sub, Storage, and Logging.
+1. [Enable APIs](https://console.cloud.google.com/flows/enableapi?apiid=compute_component,datastore,pubsub,storage_api,logging,plus) 
+for your project. The provided link will enable all necessary APIs, but if you wish to do so manually you will need 
+Compute, Datastore, Pub/Sub, Storage, and Logging. Note: enabling the APIs can take a few minutes.
 
-1. Install the [Google Cloud SDK](https://cloud.google.com/sdk)
+1. [Initialise the Container Engine for the project](https://console.cloud.google.com/kubernetes/list) 
 
-        $ curl https://sdk.cloud.google.com | bash 
-        $ gcloud init
+1. If on OSX or Linux then install the [Google Cloud SDK](https://cloud.google.com/sdk):
+
+        curl https://sdk.cloud.google.com | bash 
+
+    or if on Windows then use the Google Cloud Shell (because kubectl doesn't work yet on Windows) which you can start
+    from the [Google Cloud Platform Console](https://console.cloud.google.com).
+
+1. (Re-)Initialise the settings to set the compute zone:
+
+        gcloud init
 
 1. Create a cluster for the bookshelf application
 
-
-    $ gcloud container clusters create guestbook --scopes "https://www.googleapis.com/auth/userinfo.email","cloud-platform" --num-nodes 2
-    $ gcloud container clusters get-credentials guestbook`
+        gcloud container clusters create guestbook --scopes "https://www.googleapis.com/auth/userinfo.email","cloud-platform" --num-nodes 2
+        gcloud container clusters get-credentials guestbook
     
 The get-credentials commands initializes the kubectl CLI tool with the cluster you just created.    
 
@@ -74,12 +82,6 @@ Alternatively, you can use the Makefile:
     
     make create-cluster
     
-Troubleshooting note, if you see the following error:
-
-"Project <project_name> is not fully initialized with the default service accounts."
-
-Wait a few minutes and try again.
-
 ### A note about cost
 
 The --num-nodes flag in the cluster create specifies how many instances are created. Container Engine orchestrator is 
@@ -104,27 +106,26 @@ The Django app depends on a PostgreSQL and Redis service. While this README expl
 the Kubernetes cluster, for local purposes you may want to run them locally or elsewhere. Looking in mysite/settings.py,
 you can see the app looks for several environment variables. 
 
+The first environment variable `NODB`, if set to 1, uses a SQLite database and an in-memory cache, allowing the app to 
+run without connecting to a real database. This is useful to test the app locally without Postgres/Redis, or deploy it 
+to Kubernetes without Postgres/Redis. Instead, it will use a local SQLite file and in-memory cache. In the Kubernetes 
+cluster, each container will have its own SQLite database and memory-cache, so the persistence and cache storage of the 
+values will not be shared between containers so will not be right. The `NODB` setting is just to help debug 
+incrementally and should be turned off.
 
-The first environment variable `NODB`, if set to 1, uses
-a SQLite database and an in-memory cache, allowing the app to run without connecting to a real database. This is useful
- to test the app locally without Postgres/Redis, or deploy it to Kubernetes without Postgres/Redis. Instead, it will
- use a local SQLite file and in-memory cache. In the Kubernetes cluster, each container will have its own SQLite 
- database and memory-cache, so the persistence and cache storage of the values will not be shared between containers 
- so will not be right. The NODB setting is just to help debug incrementally and should be turned off.
-
-Once NODB is disabled, you can connect to an external PostgreSQL or Redis service, or read further to learn how to 
+Once `NODB` is disabled, you can connect to an external PostgreSQL or Redis service, or read further to learn how to 
 setup these services within the cluster. Once you have host values for these services, you can set 
-POSTGRES_SERVICE_HOST, REDIS_MASTER_SERVICE_HOST, and REDIS_SLAVE_SERIVCE_HOST with their appropriate values when 
-runnig locally. When running on Kubernetes these variables will be automatically populated. See 
+`POSTGRES_SERVICE_HOST`, `REDIS_MASTER_SERVICE_HOST`, and `REDIS_SLAVE_SERVICE_HOST` with their appropriate values when 
+running locally. When running on Kubernetes these variables will be automatically populated. See 
 guestbook/mysite/settings.py for more detail.
 
-kubernetes_configs/frontend.yaml also comments out the Secret mounts. Once you're ready to set NODB to 0,  make sure
+kubernetes_configs/frontend.yaml also comments out the Secret mounts. Once you're ready to set `NODB` to 0, make sure
 you create the secrets (described below) then re-create the frontend replication controller with the secrets mounted
 config uncommented.
 
 If you want to emulate the Kubernetes environment locally, you can use env.template as a starting point for a file that 
 can export these environment variables locally. Once it's created, you can source it to add them to your local 
-enviornment:
+environment:
 
 # create .env file from env.template example
 # source .env
@@ -137,9 +138,8 @@ Enter the guestbook directory
     
     cd guestbook
 
-First make sure you have Django installed. It's recommended you do so in a 
-[virtualenv](https://virtualenv.pypa.io/en/latest/). The requirements.txt
-contains just the Django dependency.
+First make sure you have Django installed. It's recommended you do so in a  
+[virtualenv](https://virtualenv.pypa.io/en/latest/). The requirements.txt contains just the Django dependency.
 
     pip install -r requirements.txt
 
@@ -153,16 +153,18 @@ The app can be run locally the same way as any other Django app.
 
 ## Build the Guestbook container
 
-Within the Dockerfile, NODB is turned on or off. Once you have deployed PostgreSQL or Redis, you can disable this 
+Within the Dockerfile, `NODB` is turned on or off. Once you have deployed PostgreSQL or Redis, you can disable this 
 flag. If you deploy those services within Kubernetes, the environment variables will be automatically populated. 
 Otherwise you should set the environment variables manually using ENV in the Dockerfile.
 
-Before the application can be deployed to Container Engine, you will need build and push the image to [Google Container Registry](https://cloud.google.com/container-registry/). 
+Before the application can be deployed to Container Engine, you will need build and push the image to 
+[Google Container Registry](https://cloud.google.com/container-registry/). 
 
     cd guestbook
-    # Make sure NODB is enabled and set to 1 in the Dockerfile if you still haven't setup Postgres and REDIS
-    docker build -t gcr.io/your-project-id/guestbook .
-    gcloud docker push gcr.io/your-project-id/guestbook
+    # Make sure NODB is enabled and set to 1 in the Dockerfile if you still haven't setup Postgres and REDIS.
+    GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
+    docker build -t gcr.io/$GCLOUD_PROJECT/guestbook .
+    gcloud docker push gcr.io/$GCLOUD_PROJECT/guestbook
 
 Alternatively, this can be done using 
 
@@ -172,12 +174,10 @@ Alternatively, this can be done using
 
 ## Deploying the frontend to Kubernetes
 
-The Django application is represented  in Kubernetes config, called `frontend`. First, replace the 
-GCLOUD_PROJECT in `kubernetes_configs/frontend.yaml` with your project ID. Alternatively, run `make template`, which 
-should automatically populate the GCLOUD_PROJECT environment variable with your `gcloud config` settings, and replace
-$GCLOUD_PROJECT in the kubernets config tmplates with your actual project name.
-
-
+The Django application is represented in Kubernetes config, called `frontend`. First, replace the 
+`GCLOUD_PROJECT` in `kubernetes_configs/frontend.yaml` with your project ID. Alternatively, run `make template`, which 
+should automatically populate the `GCLOUD_PROJECT` environment variable with your `gcloud config` settings, and replace
+`$GCLOUD_PROJECT` in the Kubernetes config templates with your actual project name.
 
 Once you've finished following the above instructions on how to build your container, it needs to be 
 pushed to a Docker image registry that Kubernetes can pull from. One option is Docker hub, but in these examples we use
@@ -187,30 +187,30 @@ pushed to a Docker image registry that Kubernetes can pull from. One option is D
     make build
     make push
 
-Once the image is built, it can be deployed in a Kubernetes pod. kubernetes_configs/frontend.yalm contains the 
+Once the image is built, it can be deployed in a Kubernetes pod. `kubernetes_configs/frontend.yaml` contains the 
 Replication Controller to spin up Pods with this image, as well as a Service with an external load balancer. However,
 the frontend depends on secret passwords for the database, so before it's deployed, a Kubernetes Secret resource with
- your database passwords must be created.
+your database passwords must be created.
  
 ### Create Secrets
 
- Even if NODB is enabled, the frontend replication controller is configured to use the Secret volume, so it must
- be created in your cluster first.
+Even if `NODB` is enabled, the frontend replication controller is configured to use the Secret volume, so it must
+be created in your cluster first.
  
- Kubernetes [Secrets](http://kubernetes.io/v1.1/docs/user-guide/secrets.html) are used to store the database password.
- They must be base64 encoded and store in `kubernetes/configs/db.password.yaml`. A template containing an example config
- is created, but your actual Secrets shoudl not be added to source control. 
+Kubernetes [Secrets](http://kubernetes.io/v1.1/docs/user-guide/secrets.html) are used to store the database password.
+They must be base64 encoded and store in `kubernetes_configs/db.password.yaml`. A template containing an example config
+is created, but your actual Secrets should not be added to source control. 
  
- In order to get the base64 encoded password, use the base64 tool
+In order to get the base64 encoded password, use the base64 tool
  
      echo mysecretpassword | base64 
      
- Then copy and paste that value into the appropriate part of the Secret config (your-base64-encoded-pw-here)
+Then copy and paste that value into the appropriate part of the Secret config (your-base64-encoded-pw-here)
  
      kubectl create -f kubernetes_configs/db_password.yaml
  
- In the Postgres and Frontend replication controller, these Secrets are mounted onto their pods. In their Dockerfile,
- they are read into environment variables.
+In the Postgres and Frontend replication controller, these Secrets are mounted onto their pods. In their Dockerfile
+they are read into environment variables.
  
 ### Create the frontend Service and Replication Controller
  
@@ -242,7 +242,7 @@ You can then browse to the external IP address in your browser to see the booksh
 When you are ready to update the replication controller with a new image you built, the following command will do a 
 rolling update
 
-    kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/frontend
+    kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook
     
 which can also be done with the `make update` command.    
 
@@ -255,7 +255,7 @@ Since the Redis cluster has no volumes or secrets, it's pretty easy to setup:
 This creates a redis-master read/write service and redis-slave service. The images used are configured to properly 
 replicate from the master to the slaves.
 
-There should only be one redis-master pod, so the replicatoin controller configures 1 replicas. There can be many
+There should only be one redis-master pod, so the replication controller configures 1 replicas. There can be many
 redis-slave pods, so if you want more you can do:
 
     kubectl scale rc redis-slave --replicas=5
@@ -265,7 +265,7 @@ redis-slave pods, so if you want more you can do:
 PostgresSQL will need a disk backed by a Volume to run in Kubernetes. For this example, we create a persistent disk
 using a GCE persistent disk:
 
-    gcloud compute disks create pg-data  --size 500GB
+    gcloud compute disks create pg-data --size 200GB
 
 or
     make disk
@@ -283,12 +283,12 @@ Finally, you should be able to create the PostgreSQL service and pod.
 
     kubectl create -f kubernetes_configs/postgres.yaml
     
-Only one pod can read and write to a GCE disk, so the PostgreSQL replicaiton controller is set to control 1 pod. 
-Don't scale more instances of the Postgres POD. 
+Only one pod can read and write to a GCE disk, so the PostgreSQL replication controller is set to control 1 pod. 
+Don't scale more instances of the Postgres pod. 
     
 ### Re-Deploy The Frontend and Run Migrations
 
-Now that the database and redis service are created, you should rebuild the frontend guestbook image with NODB
+Now that the database and redis service are created, you should rebuild the frontend guestbook image with `NODB`
 disabled.
 
     cd guestbook
@@ -303,14 +303,16 @@ With this new image, the replication controller should be updated. One way is to
 This will safely spin down the old images and replace it with the new image. However, for development purposes
 it can be quicker to scale the controller to 0 and then back up.
  
-     kubectl scale scale rf frontend --replicas=0
-     kubectl scale scale rf frontend --replicas=3
+     kubectl scale --replicas=0 rc/frontend
+     kubectl scale --replicas=3 rc/frontend
 
 Finally, the Django migrations must be run to create the table. This can also be accomplished with kubectl-exec, this
 time with the frontend pod. However, make sure your frontend-pod is actually talking to the database. If you earlier
-built the image with NODB, rebuild it with NODB commented out. Then you can run the migrations:
+built the image with `NODB`, rebuild it with `NODB` commented out. Then you can run the migrations:
 
-	kubectl exec $(FRONTEND_POD_NAME) -- python /app/manage.py migrate
+    FRONTEND_POD_NAME=$(kubectl get pods | grep frontend -m 1 | awk '{print $1}')
+	kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py makemigrations
+	kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py migrate
 	
 replacing FRONTEND_POD_NAME with the appropriate name, or automatically:
  	
