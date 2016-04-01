@@ -35,14 +35,23 @@ spec:
     spec:
       containers:
       - name: guestbook
-        # Replace  with your project ID or use `make template`
+        # Replace with your project ID or use `make template`
         image: gcr.io/$GCLOUD_PROJECT/guestbook
+
         # This setting makes nodes pull the docker image every time before
         # starting the pod. This is useful when debugging, but should be turned
         # off in production.
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+
+        # Mounts the secret volume under /etc/secrets. We're not using this when NODB is set.
+        volumeMounts:
+        - name: secrets
+          mountPath: /etc/secrets
+          readOnly: true
+
+      # The secret to use. (In our case it will appear as the file /etc/secrets/djangouserpw)
       volumes:
       - name: secrets
         secret:
