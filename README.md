@@ -162,7 +162,7 @@ Before the application can be deployed to Container Engine, you will need build 
 
     cd guestbook
     # Make sure NODB is enabled and set to 1 in the Dockerfile if you still haven't setup Postgres and REDIS.
-    GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
+    export GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
     docker build -t gcr.io/$GCLOUD_PROJECT/guestbook .
     gcloud docker push gcr.io/$GCLOUD_PROJECT/guestbook
 
@@ -174,10 +174,13 @@ Alternatively, this can be done using
 
 ## Deploying the frontend to Kubernetes
 
-The Django application is represented in Kubernetes config, called `frontend`. First, replace the 
-`GCLOUD_PROJECT` in `kubernetes_configs/frontend.yaml` with your project ID. Alternatively, run `make template`, which 
-should automatically populate the `GCLOUD_PROJECT` environment variable with your `gcloud config` settings, and replace
-`$GCLOUD_PROJECT` in the Kubernetes config templates with your actual project name.
+The Django application is represented in Kubernetes config, called `frontend`. First, cp the `.tmpl` files in `kubernetes_configs` and then replace the 
+`GCLOUD_PROJECT` in `kubernetes_configs/frontend.yaml` with your project ID. 
+
+Alternatively, run `make template`, which should automatically populate the `GCLOUD_PROJECT` environment variable with 
+your `gcloud config` settings, and replace `$GCLOUD_PROJECT` in the Kubernetes config templates with your actual project name:
+
+    make template
 
 Once you've finished following the above instructions on how to build your container, it needs to be 
 pushed to a Docker image registry that Kubernetes can pull from. One option is Docker hub, but in these examples we use
@@ -242,9 +245,20 @@ You can then browse to the external IP address in your browser to see the booksh
 When you are ready to update the replication controller with a new image you built, the following command will do a 
 rolling update
 
-    kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook
+    export GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
+    kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook:latest
     
-which can also be done with the `make update` command.    
+which can also be done with the `make update` command. If you encounter problems with the rolling-update, then
+check the events:
+ 
+    kubectl get events
+
+It can happen that the nodes don't have enough resources left. A manual scaling down of the replication controller can
+help (see above) or you can resize the cluster to have an additional node:
+
+    gcloud container clusters resize guestbook --size 3
+    
+Give it a few minutes to provision the node, then try the rolling update again.
 
 ## Create the Redis cluster
 
@@ -268,6 +282,7 @@ using a GCE persistent disk:
     gcloud compute disks create pg-data --size 200GB
 
 or
+
     make disk
 
 Edit `kubernetes_configs/postgres.yaml` volume name to match the name of the disk you just created, if different.
@@ -310,11 +325,11 @@ Finally, the Django migrations must be run to create the table. This can also be
 time with the frontend pod. However, make sure your frontend-pod is actually talking to the database. If you earlier
 built the image with `NODB`, rebuild it with `NODB` commented out. Then you can run the migrations:
 
-    FRONTEND_POD_NAME=$(kubectl get pods | grep frontend -m 1 | awk '{print $1}')
+    export FRONTEND_POD_NAME=$(kubectl get pods | grep frontend -m 1 | awk '{print $1}')
 	kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py makemigrations
 	kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py migrate
 	
-replacing FRONTEND_POD_NAME with the appropriate name, or automatically:
+or:
  	
     make migrations
 
