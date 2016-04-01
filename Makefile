@@ -39,9 +39,14 @@ create-bucket:
 
 .PHONY: template
 template:
-	sed -i ".tmpl" "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/postgres.yaml
-	sed -i ".tmpl" "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/frontend.yaml
-	sed -i ".tmpl" "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/load_tester.yaml
+	sed "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/postgres.yaml.tmpl > kubernetes_configs/postgres.yaml
+	sed "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/frontend.yaml.tmpl > kubernetes_configs/frontend.yaml
+	sed "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/load_tester.yaml.tmpl > kubernetes_configs/load_tester.yaml
+
+.PHONY: push
+push:
+    docker build -t gcr.io/$(GCLOUD_PROJECT)/guestbook .
+    gcloud docker push gcr.io/$(GCLOUD_PROJECT)/guestbook
 
 .PHONY: deploy
 deploy: push template
@@ -49,11 +54,11 @@ deploy: push template
 
 .PHONY: update
 update:
-	kubectl rolling-update guestbook --image=gcr.io/${GCLOUD_PROJECT}/guestbook
+	kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook
 
 .PHONY: disk
 disk:
-	gcloud compute disks create pg-data  --size 500GB
+	gcloud compute disks create pg-data  --size 200GB
 
 .PHONY: firewall
 firewall:
