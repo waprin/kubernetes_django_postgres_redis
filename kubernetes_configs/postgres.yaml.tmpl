@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: gcr.io/delete-me-1156/postgres-pw
+        image: gcr.io/$GCLOUD_PROJECT/postgres-pw
         # disable this in production±
         imagePullPolicy: Always
         ports:
@@ -48,7 +48,7 @@ spec:
       - name: postgresdata
         gcePersistentDisk:
           # your disk name here
-          pdName: pg-data-6
+          pdName: pg-data
           fsType: ext4
       - name: secrets
         secret:
@@ -64,7 +64,7 @@ spec:
     protocol: "TCP"
     port: 5432
     targetPort: 5432
-    nodePort: 30061
-  type: "NodePort" 
+    # nodePort: 30061
+  # type: "NodePort"
   selector:
     name: postgres
