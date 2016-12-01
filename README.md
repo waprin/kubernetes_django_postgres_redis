@@ -1,15 +1,19 @@
-This project is owned by Google copyright 2016 but is not an official Google-product nor officially maintained or 
-supported by Google.
+This project is owned by Google Copyright 2016 but is not an official 
+Google-product nor officially maintained or  supported by Google.
 
-# Getting started with Django on Google Container Engine (Kubernetes)
+# Getting started with Django on Kubernetes with  Google Container Engine and 
+Minikube
 
 Since this project demonstrates deploying Postgres and Redis to the cluster, it's slightly involved. For a simpler
 example of Django on Container Engine/Kubernetes, try 
 
     https://github.com/GoogleCloudPlatform/python-docs-samples/tree/master/container_engine/django_tutorial
- 
-which also deploys Django to Kubernetes but uses a CloudSQL managed MySQL database, no cache, no 
-secrets, and does not demonstrate autoscaling.
+
+which also deploys Django to Kubernetes but uses a CloudSQL managed MySQL database, 
+no cache, no secrets, and does not demonstrate autoscaling.
+
+This project also demonstrates how to run the project on a local Kubernetes
+cluster using Minikube.
 
 This repository is an example of how to run a [Django](https://www.djangoproject.com/) 
 app on Google Container Engine. It was created to go with a slide deck created here.
@@ -29,16 +33,43 @@ part 2:
 https://medium.com/@waprin/deploying-django-postgres-and-redis-containers-to-kubernetes-part-2-b287f7970a33
 
 
-This project walks through setting up this project on a Google Container Engine Kubernetes cluster. These 
-instructions should work on other Kubernetes platforms with some adjustments and should also deploy
-on other Kubernetes providers besides Google Container. Specifically, cluster creation steps, disks, load balancers, 
-cloud storage options, and node autoscalers should get replaced by their equivalents on your platform. 
+This project walks through setting up this project on a Google Container 
+Engine Kubernetes cluster. These  instructions should 
+work on other Kubernetes platforms with some adjustments and should also 
+deploy on other Kubernetes providers besides Google Container. Specifically, 
+cluster creation steps, disks, load balancers,  cloud storage options, and 
+node autoscalers should get replaced by their equivalents on your platform. 
  
-This project demonstrates how to create a PostgreSQL database and Redis cache within your cluster. It also contains
-an image to simulate load on your cluster to demonstrate autoscaling. The app is inspired by the 
+This project demonstrates how to create a PostgreSQL database and Redis cache
+  within your cluster. It also contains an image to simulate load on your 
+  cluster to demonstrate autoscaling. The app is inspired by the 
 [PHP-Redis Guestbook example](https://github.com/kubernetes/kubernetes/tree/master/examples/guestbook/php-redis).
 
 Please submit any code or doc issues to the issue tracker!
+
+## Container Engine vs Minikube
+
+Originally, this project focused only on how to run the project on Container
+Engine. As a followup, instructions for how to run the project on a local
+Kubernetes cluster using [minikube](https://github.com/kubernetes/minikube) 
+ have been added. Minikube has several advantages. It's free, it works offline,
+ but it still emulates a local Kubernetes cluster.
+ 
+Since Minikube fully emulates a Kubernetes cluster, only a few small changes
+need to be made when deploying the project. Notably:
+
+* The PostgreSQL Deployment requires a Persistent Volume Claim. The Persistent
+Volume that is bound to is different. For Container Engine, it's bound to a 
+GCE Persistent Disk. For Minikube, it's bound to a directory on your local 
+machine (hostMount)
+
+* Images for Container Engine are stored on Google Container Registry. Minikube
+is not easily able to authenticate and pull these images, so instead, you use
+`eval $(minikube docker-env)` to share the Docker daemon with Minikube. Images
+you build with `docker build` will then be available to Minkube. Note that
+the default imagePullPolicy will be 'Always' for any images without tags,
+ so imagePullPolicy has been explicitly set to IfNotPresent for all the images.
+
 
 ## Makefile
 
@@ -49,7 +80,7 @@ environment variable, which will be picked up from your gcloud config. Make sure
     
 There are more Makefiles in sub-directories to help build and push specific images.
 
-## Pre-requisites
+## Container Engine Pre-requisites
 
 1. Install [Docker](https://www.docker.com/).
  
@@ -85,6 +116,14 @@ Alternatively, you can use the Makefile:
     
     make create-cluster
     
+### Minkube Prerequisites 
+
+Please see the [minikube project](https://github.com/kubernetes/minikube) for
+installation instructions. Note that if you're using Docker for Mac, you 
+ should specify the correct driver when you start Minikube.
+ 
+    minikube start --driver=xhyve
+    
 ### A note about cost
 
 The --num-nodes flag in the cluster create specifies how many instances are created. Container Engine orchestrator is 
@@ -102,11 +141,10 @@ or
 To delete the cluster and not get charged for continued use. Deleting resources you are not using is especially 
 important if you run the autoscaling example to create many instances.
   
-
 ## Running PostgreSQL and Redis
 
 The Django app depends on a PostgreSQL and Redis service. While this README explains how to deploy those services within
-the Kubernetes cluster, for local purposes you may want to run them locally or elsewhere. Looking in mysite/settings.py,
+the Kubernetes cluster. Looking in mysite/settings.py,
 you can see the app looks for several environment variables. 
 
 The first environment variable `NODB`, if set to 1, uses a SQLite database and an in-memory cache, allowing the app to 
@@ -126,16 +164,7 @@ kubernetes_configs/frontend.yaml also comments out the Secret mounts. Once you'r
 you create the secrets (described below) then re-create the frontend replication controller with the secrets mounted
 config uncommented.
 
-If you want to emulate the Kubernetes environment locally, you can use env.template as a starting point for a file that 
-can export these environment variables locally. Once it's created, you can source it to add them to your local 
-environment:
-
-# create .env file from env.template example
-# source .env
-
-Don't check the file with your environment variable values into version control.
-
-## Running locally
+## Running without a database/cache and without Kubernetes
 
 Enter the guestbook directory
     
@@ -152,13 +181,15 @@ The app can be run locally the same way as any other Django app.
     export NODB=1
     python manage.py runserver
 
-# Deploying To Google Container Engine (Kubernetes)
+# Deploying To Google Container Engine or Minikube (Kubernetes)
 
 ## Build the Guestbook container
 
 Within the Dockerfile, `NODB` is turned on or off. Once you have deployed PostgreSQL or Redis, you can disable this 
 flag. If you deploy those services within Kubernetes, the environment variables will be automatically populated. 
 Otherwise you should set the environment variables manually using ENV in the Dockerfile.
+
+### Container Engine
 
 Before the application can be deployed to Container Engine, you will need build and push the image to 
 [Google Container Registry](https://cloud.google.com/container-registry/). 
@@ -172,7 +203,12 @@ Before the application can be deployed to Container Engine, you will need build 
 Alternatively, this can be done using 
 
     make push
-    
+
+### Minikube
+
+    cd guestbook
+    eval $(minikube docker env)
+
 ## Deploy to the application
 
 ## Deploying the frontend to Kubernetes
@@ -213,14 +249,14 @@ In order to get the base64 encoded password, use the base64 tool
      
 Then copy and paste that value into the appropriate part of the Secret config (your-base64-encoded-pw-here)
  
-     kubectl create -f kubernetes_configs/db_password.yaml
+     kubectl apply -f kubernetes_configs/db_password.yaml
  
 In the Postgres and Frontend replication controller, these Secrets are mounted onto their pods. In their Dockerfile
 they are read into environment variables.
  
 ### Create the frontend Service and Replication Controller
  
-    kubectl create -f kubernetes_configs/frontend.yaml
+    kubectl apply -f kubernetes_configs/frontend.yaml
     
 Alternatively this create set can be done using the Makefile
     
@@ -267,7 +303,7 @@ Give it a few minutes to provision the node, then try the rolling update again.
 
 Since the Redis cluster has no volumes or secrets, it's pretty easy to setup:
 
-    kubectl create -f kubernetes_configs/redis_cluster.yaml
+    kubectl apply -f kubernetes_configs/redis_cluster.yaml
 
 This creates a redis-master read/write service and redis-slave service. The images used are configured to properly 
 replicate from the master to the slaves.
@@ -279,6 +315,8 @@ redis-slave pods, so if you want more you can do:
 
 ## Create PostgreSQL
 
+### Container Engine
+
 PostgresSQL will need a disk backed by a Volume to run in Kubernetes. For this example, we create a persistent disk
 using a GCE persistent disk:
 
@@ -288,19 +326,33 @@ or
 
     make disk
 
-Edit `kubernetes_configs/postgres.yaml` volume name to match the name of the disk you just created, if different.
+Edit `kubernetes_configs/postgres/gke_volume.yaml` volume name to match the 
+name of the disk you just created, if different.
 
 For Postgres, the secrets need to get populated and a script to initialize the database needs to be added, so a image
 should be built:
+
+### Minikube
+
+Create the directory to mount:
+
+    sudo mkdir /data/pv0001/
+    sudo chown $(whoami) /data/pv001
+
+Create the Minikube persistent volume
+
+    kubectl apply -f kubernetes_config/postgres/minikube_volume.yaml
+
+### Creating the image, PVC, and deployment 
  
     cd postgres_image
     make build
-    make push
-    
+    make push 
+
 Finally, you should be able to create the PostgreSQL service and pod.
 
-    kubectl create -f kubernetes_configs/postgres.yaml
-    
+    kubectl apply -f kubernetes_configs/postgres/postgres.yaml
+
 Only one pod can read and write to a GCE disk, so the PostgreSQL replication controller is set to control 1 pod. 
 Don't scale more instances of the Postgres pod. 
     
@@ -405,7 +457,10 @@ Please use the Issue Tracker for any issues or questions.
 
 * See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-
++Community
+ +---------
+ +
+ +Google Cloud Platform Python developers hang out in [Slack](https://googlecloud-community.slack.com) in the #python channel (get an invitation [here](https://gcp-slack.appspot.com/)). 
 ## Licensing
 
 * See [LICENSE](LICENSE)

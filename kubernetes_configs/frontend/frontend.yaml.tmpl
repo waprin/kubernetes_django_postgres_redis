@@ -12,16 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-# This file configures the guestbook application . The frontend serves
-# public web traffic.
-
-# For more info about Pods see:
-#   https://cloud.google.com/container-engine/docs/pods/
-# For more info about Replication Controllers:
-#   https://cloud.google.com/container-engine/docs/replicationcontrollers/
-
-apiVersion: v1
-kind: ReplicationController
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
   name: frontend
   labels:
@@ -35,23 +27,16 @@ spec:
     spec:
       containers:
       - name: guestbook
-        # Replace with your project ID or use `make template`
-        image: gcr.io/$GCLOUD_PROJECT/guestbook
-
-        # This setting makes nodes pull the docker image every time before
-        # starting the pod. This is useful when debugging, but should be turned
-        # off in production.
-        imagePullPolicy: Always
+        # Replace  with your project ID or use `make template`
+        image: gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
-
-        # Mounts the secret volume under /etc/secrets. We're not using this when NODB is set.
+        # uncomment the following lines with NODB set to 0, so you can mount the DB secrest
         volumeMounts:
         - name: secrets
           mountPath: /etc/secrets
           readOnly: true
-
-      # The secret to use. (In our case it will appear as the file /etc/secrets/djangouserpw)
       volumes:
       - name: secrets
         secret:

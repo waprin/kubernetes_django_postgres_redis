@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-GCLOUD_PROJECT:=$(shell gcloud config list project --format="value(core.project)")
+GOOGLE_CLOUD_PROJECT:=$(shell gcloud config list project --format="value(core.project)")
 
 .PHONY: build
 build:
-	docker build -t gcr.io/$(GCLOUD_PROJECT)/postgres-pw .
+	docker build -t gcr.io/$(GOOGLE_CLOUD_PROJECT)/postgres-pw .
 
 .PHONY: push
 push: build
-	gcloud docker push gcr.io/$(GCLOUD_PROJECT)/postgres-pw
+	gcloud docker push gcr.io/$(GOOGLE_CLOUD_PROJECT)/postgres-pw
 
 

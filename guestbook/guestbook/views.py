@@ -24,7 +24,10 @@ from django.core.cache import cache
 import math
 import logging
 
-def __update_visited():
+logger = logging.getLogger('django')
+
+
+def _update_visited():
     """ Updates the visited count by one in the cache
     :return: The visited count in string form.
     """
@@ -42,8 +45,8 @@ def index(request):
     """ Updates the visited count and provides the static URL to build the main
      landing page.
     """
-    logging.info("in the index view")
-    visited = __update_visited()
+
+    visited = _update_visited()
     context = {
                  "STATIC_URL": settings.STATIC_URL,
                  "visited": visited

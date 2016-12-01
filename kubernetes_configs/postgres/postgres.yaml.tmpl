@@ -12,17 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-# This creates a Postgres Replication Controller with 1  Pod.
-# It mounts a GCE persistent disk and database secrets.
-
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
 metadata:
   name: postgres
-apiVersion: v1
-kind: ReplicationController
 spec:
   replicas: 1
-  selector:
-    name: postgres
   template:
     metadata:
       labels:
@@ -30,9 +36,8 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: gcr.io/$GCLOUD_PROJECT/postgres-pw
-        # disable this in production±
-        imagePullPolicy: Always
+        image: gcr.io/$GOOGLE_CLOUD_PROJECT/postgres-pw
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5432
         volumeMounts:
@@ -41,30 +46,24 @@ spec:
         - name: secrets
           mountPath: /etc/secrets
           readOnly: true
-      # PostgreSQL Data
-      # Replace this with the persistent disk of your choice
-      # TODO: replace with Persistent Volume
       volumes:
       - name: postgresdata
-        gcePersistentDisk:
-          # your disk name here
-          pdName: pg-data
-          fsType: ext4
+        persistentVolumeClaim:
+          claimName: postgres-data
       - name: secrets
         secret:
           secretName: db-passwords
 ---
 metadata:
- name: "postgres"
-kind: "Service"
-apiVersion: "v1"
+ name: postgres
+kind: Service
+apiVersion: v1
 spec:
   ports:
-  - name: "postgres"
-    protocol: "TCP"
+  - name: postgres
+    protocol: TCP
     port: 5432
     targetPort: 5432
-    # nodePort: 30061
-  # type: "NodePort"
   selector:
     name: postgres
+
