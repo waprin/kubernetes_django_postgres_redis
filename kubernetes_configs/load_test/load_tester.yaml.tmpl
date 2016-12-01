@@ -1,4 +1,4 @@
-# Copyright 2015 Google Inc.
+# Copyright 2016 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,7 +32,5 @@ spec:
       - name: load
         # Replace  with your project ID or use `make template`
         image: gcr.io/$GCLOUD_PROJECT/load
-        # This setting makes nodes pull the docker image every time before
-        # starting the pod. This is useful when debugging, but should be turned
-        # off in production.
-        imagePullPolicy: Always
+
+        imagePullPolicy: IfNotPresent

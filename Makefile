@@ -1,4 +1,4 @@
-# Copyright 2015 Google Inc.
+# Copyright 2016 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
-GCLOUD_PROJECT:=$(shell gcloud config list project --format="value(core.project)")
+GOOGLE_CLOUD_PROJECT:=$(shell gcloud config list project --format="value(core.project)")
 ZONE=$(shell gcloud config list compute/zone --format="value(compute.zone)")
 CLUSTER_NAME=guestbook
 COOL_DOWN=15
@@ -34,19 +34,18 @@ create-cluster:
 
 .PHONY: create-bucket
 create-bucket:
-	gsutil mb gs://$(GCLOUD_PROJECT)
-	gsutil defacl set public-read gs://$(GCLOUD_PROJECT)
+	gsutil mb gs://$(GOOGLE_CLOUD_PROJECT)
+	gsutil defacl set public-read gs://$(GOOGLE_CLOUD_PROJECT)
 
 .PHONY: template
 template:
-	sed "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/postgres.yaml.tmpl > kubernetes_configs/postgres.yaml
-	sed "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/frontend.yaml.tmpl > kubernetes_configs/frontend.yaml
-	sed "s/\$$GCLOUD_PROJECT/$(GCLOUD_PROJECT)/g" kubernetes_configs/load_tester.yaml.tmpl > kubernetes_configs/load_tester.yaml
+	sed "s/\$$GOOGLE_CLOUD_PROJECT/$(GOOGLE_CLOUD_PROJECT)/g" kubernetes_configs/postgres/postgres.yaml.tmpl > kubernetes_configs/postgres/postgres.yaml
+	sed "s/\$$GOOGLE_CLOUD_PROJECT/$(GOOGLE_CLOUD_PROJECT)/g" kubernetes_configs/frontend/frontend.yaml.tmpl > kubernetes_configs/frontend/frontend.yaml
 
 .PHONY: push
 push:
-	docker build -t gcr.io/$(GCLOUD_PROJECT)/guestbook .
-	gcloud docker push gcr.io/$(GCLOUD_PROJECT)/guestbook
+	docker build -t gcr.io/$(GOOGLE_CLOUD_PROJECT)/guestbook .
+	gcloud docker push gcr.io/$(GOOGLE_CLOUD_PROJECT)/guestbook
 
 .PHONY: deploy
 deploy: push template
@@ -54,7 +53,7 @@ deploy: push template
 
 .PHONY: update
 update:
-	kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook:latest
+	kubectl rolling-update frontend --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/guestbook:latest
 
 .PHONY: disk
 disk:
