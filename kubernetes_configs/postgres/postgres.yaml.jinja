@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-passwords
+data:
+  djangouserpw: {{ base64_db_pw }}
+---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -22,6 +30,34 @@ spec:
   resources:
     requests:
       storage: 5Gi
+---
+{% if minikube -%}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: pv0001
+spec:
+ accessModes:
+   - ReadWriteOnce
+ capacity:
+   storage: 5Gi
+ hostPath:
+   path: /data/pv0001/
+{% else -%}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv0001
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 5Gi
+  gcePersistentDisk:
+    pdName: {{ gce_disk_name }}
+    fsType: ext4
+
+{% endif %}
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -36,7 +72,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: gcr.io/$GOOGLE_CLOUD_PROJECT/postgres-pw
+        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/postgres-pw
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5432

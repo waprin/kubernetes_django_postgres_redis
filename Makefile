@@ -19,8 +19,8 @@ COOL_DOWN=15
 MIN=2
 MAX=15
 TARGET=50
-RC=frontend
-FRONTEND_POD_NAME=$(shell kubectl get pods | grep frontend -m 1 | awk '{print $$1}' )
+DEPLOYMENT=guestbook
+GUESTBOOK_POD_NAME=$(shell kubectl get pods | grep guestbook -m 1 | awk '{print $$1}' )
 
 .PHONY: all
 all: deploy
@@ -39,17 +39,16 @@ create-bucket:
 
 .PHONY: template
 template:
-	sed "s/\$$GOOGLE_CLOUD_PROJECT/$(GOOGLE_CLOUD_PROJECT)/g" kubernetes_configs/postgres/postgres.yaml.tmpl > kubernetes_configs/postgres/postgres.yaml
-	sed "s/\$$GOOGLE_CLOUD_PROJECT/$(GOOGLE_CLOUD_PROJECT)/g" kubernetes_configs/frontend/frontend.yaml.tmpl > kubernetes_configs/frontend/frontend.yaml
-
-.PHONY: push
-push:
-	docker build -t gcr.io/$(GOOGLE_CLOUD_PROJECT)/guestbook .
-	gcloud docker push gcr.io/$(GOOGLE_CLOUD_PROJECT)/guestbook
+	# Minikube templates
+	jinja2 kubernetes_configs/guestbook/guestbook.yaml.jinja minikube_jinja.json --format=json > kubernetes_configs/guestbook/guestbook_minikube.yaml
+	jinja2 kubernetes_configs/postgres/postgres.yaml.jinja minikube_jinja.json --format=json > kubernetes_configs/postgres/postgres_minikube.yaml
+	# GKE templates
+	jinja2 kubernetes_configs/guestbook/guestbook.yaml.jinja gke_jinja.json --format=json > kubernetes_configs/guestbook/guestbook_gke.yaml
+	jinja2 kubernetes_configs/postgres/postgres.yaml.jinja gke_jinja.json --format=json > kubernetes_configs/postgres/postgres_gke.yaml
 
 .PHONY: deploy
 deploy: push template
-	kubectl create -f kubernetes_config/frontend.yaml
+	kubectl apply -f kubernetes_config/guestbook/guestbook-gke.yaml
 
 .PHONY: update
 update:
@@ -71,11 +70,11 @@ autoscale-on:
 	  --max-num-replicas $(MAX) \
 	  --min-num-replicas $(MIN) \
 	  --scale-based-on-cpu --target-cpu-utilization $(shell echo "scale=2; $(TARGET)/100" | bc)
-	kubectl autoscale rc $(RC) --min=$(MIN) --max=$(MAX) --cpu-percent=$(TARGET)
+	kubectl autoscale rc $(DEPLOYMENT) --min=$(MIN) --max=$(MAX) --cpu-percent=$(TARGET)
 
 .PHONY: migrations
 migrations:
-	kubectl exec $(FRONTEND_POD_NAME) -- python /app/manage.py migrate
+	kubectl exec $(GUESTBOOK_POD_NAME) -- python /app/manage.py migrate
 
 .PHONY: delete
 delete:

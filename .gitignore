@@ -1,0 +1,5 @@
+guestbook/guestbook/migrations/*
+kubernetes_configs/guestbook/guestbook_minikube.yaml
+kubernetes_configs/guestbook/guestbook_gke.yaml
+kubernetes_configs/postgres/postgres_minikube.yaml
+kubernetes_configs/postgres/postgres_gke.yaml

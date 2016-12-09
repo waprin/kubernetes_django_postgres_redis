@@ -1,0 +1,9 @@
+{
+  "GOOGLE_CLOUD_PROJECT" : "utopian-pact-123818",
+  "minikube": null,
+  "guestbook_tag": "v9",
+  "base64_db_pw": "bXlzZWNyZXRwYXNzd29yZAo=",
+  "gce_disk_name": "pg_data",
+  "has_db": "True",
+  "hot_reload": null
+}

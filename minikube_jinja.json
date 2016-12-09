@@ -1,0 +1,9 @@
+{
+  "GOOGLE_CLOUD_PROJECT" : "utopian-pact-123818",
+  "minikube": "True",
+  "guestbook_tag": "v9",
+  "base64_db_pw": "bXlzZWNyZXRwYXNzd29yZAo=",
+  "has_db": "True",
+  "hot_reload": "True",
+  "hotreload_directory" : "/Users/waprin/code/django_postgres_redis/guestbook"
+}

@@ -15,33 +15,45 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: frontend
+  name: guestbook
   labels:
-    name: frontend
+    name: guestbook
 spec:
   replicas: 3
   template:
     metadata:
       labels:
-        name: frontend
+        name: guestbook
     spec:
       containers:
       - name: guestbook
-        # Replace  with your project ID or use `make template`
-        image: gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook
+        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/guestbook:{{- guestbook_tag -}}
+        {% if minikube %}
         imagePullPolicy: IfNotPresent
+       {%- endif %}
         ports:
         - containerPort: 8080
-        # uncomment the following lines with NODB set to 0, so you can mount the DB secrest
         volumeMounts:
+        {% if has_db -%}
         - name: secrets
           mountPath: /etc/secrets
           readOnly: true
+        {%- endif -%}
+      {% if hot_reload %}
+        - name: reload
+          mountPath: /app
+      {%- endif %}
       volumes:
+      {%- if has_db %}
       - name: secrets
         secret:
           secretName: db-passwords
-
+      {% endif %}
+      {%-if hot_reload -%}
+      - name: reload
+        hostPath:
+          path: {{ hotreload_directory }}
+      {% endif %}
 ---
 
 # The polls service provides a load-balancing proxy over the polls app
@@ -54,13 +66,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend
+  name: guestbook
   labels:
-    name: frontend
+    name: guestbook
 spec:
   type: LoadBalancer
   ports:
   - port: 80
     targetPort: 8080
   selector:
-    name: frontend
+    name: guestbook
