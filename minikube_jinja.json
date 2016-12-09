@@ -1,0 +1,3 @@
+GOOGLE_CLOUD_PROJECT=utopian-pact-123818
+HOT_RELOAD=True
+HOTRELOAD_DIRECTORY=/Users/waprin/code/django_postgres_redis/guestbook

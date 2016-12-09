@@ -36,7 +36,7 @@ RUN pip install -r /app/requirements.txt
 # NODB will use SQLite and in-memory cache insstead of Postgres And Redis
 # This is useful to test the rest of the Django setup without configuring the database/cache
 # Comment it out and rebuild this image once you have Postgres and Redis services in your cluster
-ENV NODB 1
+#ENV NODB 1
 
 # Add application code.
 ADD . /app

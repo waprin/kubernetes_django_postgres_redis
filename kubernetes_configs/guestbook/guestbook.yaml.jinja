@@ -27,20 +27,32 @@ spec:
     spec:
       containers:
       - name: guestbook
-        # Replace  with your project ID or use `make template`
-        image: gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook
+        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/guestbook
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
-        # uncomment the following lines with NODB set to 0, so you can mount the DB secrest
         volumeMounts:
+        {% if has_db}
         - name: secrets
           mountPath: /etc/secrets
           readOnly: true
+       {% endif has_db}
+       {% if hotreload %}
+       - name: reload
+         mountPath: /app
+       {% endif %}
       volumes:
+      {% if has_db}
       - name: secrets
         secret:
           secretName: db-passwords
+      {% endif %}
+      {% if hotreload %}
+      - name: reload
+        hostPath:
+          path: /Users/waprin/code/django_postgres_redis/guestbook
+      {% endif %}
+
 
 ---
 

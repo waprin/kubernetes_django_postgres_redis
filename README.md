@@ -1,8 +1,6 @@
-This project is owned by Google Copyright 2016 but is not an official 
-Google-product nor officially maintained or  supported by Google.
 
-# Getting started with Django on Kubernetes with  Google Container Engine and 
-Minikube
+
+# Getting started with Django on Kubernetes with  Google Container Engine and Minikube
 
 Since this project demonstrates deploying Postgres and Redis to the cluster, it's slightly involved. For a simpler
 example of Django on Container Engine/Kubernetes, try 
@@ -13,24 +11,10 @@ which also deploys Django to Kubernetes but uses a CloudSQL managed MySQL databa
 no cache, no secrets, and does not demonstrate autoscaling.
 
 This project also demonstrates how to run the project on a local Kubernetes
-cluster using Minikube.
+cluster using Minikube. 
 
 This repository is an example of how to run a [Django](https://www.djangoproject.com/) 
 app on Google Container Engine. It was created to go with a slide deck created here.
-
-https://speakerdeck.com/waprin/deploying-django-on-kubernetes
-
-and you can watch the talk here:
-
-https://www.youtube.com/watch?v=HKKUgWuIZro
-
-There is now also an associated Medium series where I go into more detail about why you would run
-Django on Kubernetes and how to follow this README:
-
-https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-kubernetes-9ee28e7a146
-
-part 2:
-https://medium.com/@waprin/deploying-django-postgres-and-redis-containers-to-kubernetes-part-2-b287f7970a33
 
 
 This project walks through setting up this project on a Google Container 
@@ -69,7 +53,13 @@ is not easily able to authenticate and pull these images, so instead, you use
 you build with `docker build` will then be available to Minkube. Note that
 the default imagePullPolicy will be 'Always' for any images without tags,
  so imagePullPolicy has been explicitly set to IfNotPresent for all the images.
+ 
+ * We use [jinja2 CLI](https://github.com/mattrobenolt/jinja2-cli)
+   to template the configs, allowing Minikube or GKE specific parts to be
+   included conditionally.
 
+
+will generate the GKE configs, see gke_jinja.json for example input parameters.
 
 ## Makefile
 
@@ -77,8 +67,25 @@ Several commands listed below are provided in simpler form via the Makefile. Man
 environment variable, which will be picked up from your gcloud config. Make sure you set this to the correct project,
 
     gcloud config set project <your-project-id>
-    
+
 There are more Makefiles in sub-directories to help build and push specific images.
+
+## Jinja Templates
+
+This project uses the [jinja 2 CLI](https://github.com/mattrobenolt/jinja2-cli) 
+to share templates between the GKE config and Minikube config.
+
+Run:
+
+     pip install -r requirements-dev.txt
+     
+to install the CLI. At that point, you can see `minikube_jinja.json` and 
+`gke_jinja.json` as examples of variables you need to poplate to generate the
+templates.
+ 
+     make template
+
+will use the json variables to create the templates.
 
 ## Container Engine Pre-requisites
 
@@ -122,8 +129,12 @@ Please see the [minikube project](https://github.com/kubernetes/minikube) for
 installation instructions. Note that if you're using Docker for Mac, you 
  should specify the correct driver when you start Minikube.
  
-    minikube start --driver=xhyve
-    
+    minikube start --vm-driver=xhyve
+
+Or set this permamently with:
+
+    minikube config set vm-driver=xhyve
+
 ### A note about cost
 
 The --num-nodes flag in the cluster create specifies how many instances are created. Container Engine orchestrator is 
@@ -154,15 +165,10 @@ cluster, each container will have its own SQLite database and memory-cache, so t
 values will not be shared between containers so will not be right. The `NODB` setting is just to help debug 
 incrementally and should be turned off.
 
-Once `NODB` is disabled, you can connect to an external PostgreSQL or Redis service, or read further to learn how to 
-setup these services within the cluster. Once you have host values for these services, you can set 
-`POSTGRES_SERVICE_HOST`, `REDIS_MASTER_SERVICE_HOST`, and `REDIS_SLAVE_SERVICE_HOST` with their appropriate values when 
-running locally. When running on Kubernetes these variables will be automatically populated. See 
-guestbook/mysite/settings.py for more detail.
-
-kubernetes_configs/frontend.yaml also comments out the Secret mounts. Once you're ready to set `NODB` to 0, make sure
-you create the secrets (described below) then re-create the frontend replication controller with the secrets mounted
-config uncommented.
+The Jinja templates also contain a "has_db" variable which optionally attaches
+the database password secrets to the guestbook pod. If NODB is eanbled, make
+sure your templates are generated with "has_db" set to false, and set it
+to true otherwise.
 
 ## Running without a database/cache and without Kubernetes
 
@@ -189,50 +195,48 @@ Within the Dockerfile, `NODB` is turned on or off. Once you have deployed Postgr
 flag. If you deploy those services within Kubernetes, the environment variables will be automatically populated. 
 Otherwise you should set the environment variables manually using ENV in the Dockerfile.
 
-### Container Engine
-
-Before the application can be deployed to Container Engine, you will need build and push the image to 
-[Google Container Registry](https://cloud.google.com/container-registry/). 
+Before the application can be deployed to Container Engine, you will need 
+to build the image: 
 
     cd guestbook
     # Make sure NODB is enabled and set to 1 in the Dockerfile if you still haven't setup Postgres and REDIS.
-    export GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
-    docker build -t gcr.io/$GCLOUD_PROJECT/guestbook .
+    export GOOGLE_CLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
+    docker build -t gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook .
+
+### Container Engine
+
+For GKE, you would then push the image to [Google Container Registry](https://cloud.google.com/container-registry/). 
+
     gcloud docker push gcr.io/$GCLOUD_PROJECT/guestbook
 
-Alternatively, this can be done using 
+or alternatively:
 
-    make push
+     make push
 
 ### Minikube
 
-    cd guestbook
-    eval $(minikube docker env)
+For Minikube, you don't push the image. Instead, simply make sure that when 
+you build the image, you are using the Minikube docker daemon:
+
+    $ eval $(minikube docker-env)
+    # docker build -t gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook
 
 ## Deploy to the application
 
-## Deploying the frontend to Kubernetes
+## Deploying the frontend guestbook to Kubernetes
 
-The Django application is represented in Kubernetes config, called `frontend`. First, cp the `.tmpl` files in `kubernetes_configs` and then replace the 
-`GCLOUD_PROJECT` in `kubernetes_configs/frontend.yaml` with your project ID. 
-
-Alternatively, run `make template`, which should automatically populate the `GCLOUD_PROJECT` environment variable with 
-your `gcloud config` settings, and replace `$GCLOUD_PROJECT` in the Kubernetes config templates with your actual project name:
-
-    make template
-
-Once you've finished following the above instructions on how to build your container, it needs to be 
-pushed to a Docker image registry that Kubernetes can pull from. One option is Docker hub, but in these examples we use
- Google Container Registry. 
-
-    cd guestbook
-    make build
-    make push
-
-Once the image is built, it can be deployed in a Kubernetes pod. `kubernetes_configs/frontend.yaml` contains the 
-Replication Controller to spin up Pods with this image, as well as a Service with an external load balancer. However,
+Once the image is built, it can be deployed in a Kubernetes pod. 
+`kubernetes_configs/guestbook/` contains the 
+Deployment templates to spin up Pods with this image, as well as a Service with 
+an  external load balancer. However,
 the frontend depends on secret passwords for the database, so before it's deployed, a Kubernetes Secret resource with
 your database passwords must be created.
+
+    kubectl apply -f kubernetes_config/guestbook/guestbook_gke.yaml
+    
+or on Minikube:
+    
+    kubectl apply -f kubernetes_config/guestbook/guestbook_minikube.yaml
  
 ### Create Secrets
 
@@ -247,20 +251,14 @@ In order to get the base64 encoded password, use the base64 tool
  
      echo mysecretpassword | base64 
      
-Then copy and paste that value into the appropriate part of the Secret config (your-base64-encoded-pw-here)
+Then copy and paste that value into the appropriate part of the Secret config
+in `kubernetes_configs/postgres/postgres.yaml.jinja`
  
-     kubectl apply -f kubernetes_configs/db_password.yaml
- 
-In the Postgres and Frontend replication controller, these Secrets are mounted onto their pods. In their Dockerfile
+In the Postgres and Guestbook deployments, these Secrets are mounted onto their 
+pods if "has_db" is set to true in the Jinja variables. In their Dockerfile 
 they are read into environment variables.
  
-### Create the frontend Service and Replication Controller
- 
-    kubectl apply -f kubernetes_configs/frontend.yaml
-    
-Alternatively this create set can be done using the Makefile
-    
-    make deploy
+### Create the guestbook Service and Deployment
 
 Once the resources are created, there should be 3 `frontend` pods on the cluster. To see the pods and ensure that 
 they are running:
@@ -280,6 +278,10 @@ Once the pods are ready, you can get the public IP address of the load balancer:
     kubectl get services frontend
 
 You can then browse to the external IP address in your browser to see the bookshelf application.
+
+Alternatively on Minikube, there is no external IP, so instead run:
+
+    minikube service
 
 When you are ready to update the replication controller with a new image you built, the following command will do a 
 rolling update
@@ -303,7 +305,7 @@ Give it a few minutes to provision the node, then try the rolling update again.
 
 Since the Redis cluster has no volumes or secrets, it's pretty easy to setup:
 
-    kubectl apply -f kubernetes_configs/redis_cluster.yaml
+    kubectl apply -f kubernetes_configs/redis/redis.yaml
 
 This creates a redis-master read/write service and redis-slave service. The images used are configured to properly 
 replicate from the master to the slaves.
@@ -311,7 +313,7 @@ replicate from the master to the slaves.
 There should only be one redis-master pod, so the replication controller configures 1 replicas. There can be many
 redis-slave pods, so if you want more you can do:
 
-    kubectl scale rc redis-slave --replicas=5
+    kubectl scale deployment redis-slave --replicas=5
 
 ## Create PostgreSQL
 
@@ -326,11 +328,15 @@ or
 
     make disk
 
-Edit `kubernetes_configs/postgres/gke_volume.yaml` volume name to match the 
+Edit `kubernetes_configs/postgres/postgres.yaml.jinja` volume name to match the 
 name of the disk you just created, if different.
 
 For Postgres, the secrets need to get populated and a script to initialize the database needs to be added, so a image
 should be built:
+
+    cd kubernetes_configs/postgres/postgres_image
+    make build
+    make push
 
 ### Minikube
 
@@ -339,19 +345,20 @@ Create the directory to mount:
     sudo mkdir /data/pv0001/
     sudo chown $(whoami) /data/pv001
 
-Create the Minikube persistent volume
-
-    kubectl apply -f kubernetes_config/postgres/minikube_volume.yaml
-
 ### Creating the image, PVC, and deployment 
  
-    cd postgres_image
+    cd kubernetes_config/postgres/postgres_image
     make build
     make push 
 
 Finally, you should be able to create the PostgreSQL service and pod.
 
-    kubectl apply -f kubernetes_configs/postgres/postgres.yaml
+    kubectl apply -f kubernetes_configs/postgres/postgres_gke.yaml
+
+or on Minikube:
+ 
+    kubectl apply -f kubernetes_configs/postgres/postgres_minikube.yaml
+
 
 Only one pod can read and write to a GCE disk, so the PostgreSQL replication controller is set to control 1 pod. 
 Don't scale more instances of the Postgres pod. 
@@ -381,11 +388,11 @@ time with the frontend pod. However, make sure your frontend-pod is actually tal
 built the image with `NODB`, rebuild it with `NODB` commented out. Then you can run the migrations:
 
     export FRONTEND_POD_NAME=$(kubectl get pods | grep frontend -m 1 | awk '{print $1}')
-	kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py makemigrations
-	kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py migrate
-	
+	  kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py makemigrations
+	  kubectl exec ${FRONTEND_POD_NAME} -- python /app/manage.py migrate
+
 or:
- 	
+ 
     make migrations
 
 ### Serve the static content
@@ -399,7 +406,7 @@ alternatively use a CDN of your choice. Create a bucket for your project:
 
     gsutil mb gs://<your-project-id>
     gsutil defacl set public-read gs://<your-project-id>
-    
+
 or 
 
     make create-bucket
@@ -432,14 +439,14 @@ build the image:
     make push
 
 Then create the Replication Controller and scale some clients: 
-  
-    kubectl create -f kubernetes_configs/load_tester.yaml
+
+    kubectl apply -f kubernetes_configs/load_tester.yaml
     kubectl scale rc load --replicas=20
-  
+
 to generate load. Then
 
     make autoscaling
-  
+
 will create both Node autoscaling (gcloud) and Pod autoscaling (Kubernetes Horizontal Pod Autoscaling).
 
 Again, by default this will scale to 10 nodes whcih you will be charged for, so pleaes disable autoscaling and scale 
@@ -457,7 +464,32 @@ Please use the Issue Tracker for any issues or questions.
 
 * See [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## Additional Reading
+
+For another popular Django/Kubernets project + blog post, see:
+
+https://harishnarayanan.org/writing/kubernetes-django/
+
+This project was originally made for a talk/blog post series.
+
+https://speakerdeck.com/waprin/deploying-django-on-kubernetes
+
+and you can watch the talk here:
+
+https://www.youtube.com/watch?v=HKKUgWuIZro
+
+There is now also an associated Medium series where I go into more detail about why you would run
+Django on Kubernetes and how to follow this README:
+
+https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-kubernetes-9ee28e7a146
+
+part 2:
+https://medium.com/@waprin/deploying-django-postgres-and-redis-containers-to-kubernetes-part-2-b287f7970a33
+
 
 ## Licensing
 
 * See [LICENSE](LICENSE)
+
+This project is owned by Google Copyright 2016 but is not an official 
+Google-product nor officially maintained or  supported by Google.
