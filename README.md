@@ -54,17 +54,15 @@ you build with `docker build` will then be available to Minkube. Note that
 the default imagePullPolicy will be 'Always' for any images without tags,
  so imagePullPolicy has been explicitly set to IfNotPresent for all the images.
  
- * We use [jinja2 CLI](https://github.com/mattrobenolt/jinja2-cli)
-   to template the configs, allowing Minikube or GKE specific parts to be
-   included conditionally.
+* We use [jinja2 CLI](https://github.com/mattrobenolt/jinja2-cli)
+  to template the configs, allowing Minikube or GKE specific parts to be
+  included conditionally.
 
-
-will generate the GKE configs, see gke_jinja.json for example input parameters.
 
 ## Makefile
 
-Several commands listed below are provided in simpler form via the Makefile. Many of them use the GCLOUD_PROJECT 
-environment variable, which will be picked up from your gcloud config. Make sure you set this to the correct project,
+Several commands listed below are provided in simpler form via the Makefile. 
+Many of them use the GOOGLE_CLOUD_PROJECT environment variable, which will be picked up from your gcloud config. Make sure you set this to the correct project,
 
     gcloud config set project <your-project-id>
 
@@ -207,7 +205,7 @@ to build the image:
 
 For GKE, you would then push the image to [Google Container Registry](https://cloud.google.com/container-registry/). 
 
-    gcloud docker push gcr.io/$GCLOUD_PROJECT/guestbook
+    gcloud docker push gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook
 
 or alternatively:
 
@@ -286,8 +284,8 @@ Alternatively on Minikube, there is no external IP, so instead run:
 When you are ready to update the replication controller with a new image you built, the following command will do a 
 rolling update
 
-    export GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
-    kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook:latest
+    export GOOGLE_CLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
+    kubectl rolling-update frontend --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/guestbook:latest
     
 which can also be done with the `make update` command. If you encounter problems with the rolling-update, then
 check the events:
