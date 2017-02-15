@@ -2,6 +2,20 @@
 
 # Getting started with Django on Kubernetes with  Google Container Engine and Minikube
 
+This is a tutorial repo associated with a serise of blog posts on Medium.com.
+It demonstrates how to run [Django](https://www.djangoproject.com/),
+Postgres, and Redis all on a Kubernetes cluster using either
+[Minikube](https://github.com/kubernetes/minikube) (locally)
+or [Google Container Engine](https://cloud.google.com/container-engine/).
+
+[Part 1](https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-kubernetes-9ee28e7a146#.24a63psfu)
+[Part 2](https://medium.com/google-cloud/deploying-django-postgres-and-redis-containers-to-kubernetes-part-2-b287f7970a33#.vjwzjntcq)
+[Part 3](https://medium.com/google-cloud/local-django-on-kubernetes-with-minikube-89f5ad100378#.se1r8ouba)
+
+**If you're following along part 1 or part 2 of the tutorial, check out the `part1` git branch
+(viewable [here](https://github.com/waprin/kubernetes_django_postgres_redis/tree/part1) ) which is an older
+branch before the Minikube changes**.
+
 Since this project demonstrates deploying Postgres and Redis to the cluster, it's slightly involved. For a simpler
 example of Django on Container Engine/Kubernetes, try
 
@@ -10,24 +24,18 @@ example of Django on Container Engine/Kubernetes, try
 which also deploys Django to Kubernetes but uses a CloudSQL managed MySQL database,
 no cache, no secrets, and does not demonstrate autoscaling.
 
-This project also demonstrates how to run the project on a local Kubernetes
-cluster using Minikube.
-
-This repository is an example of how to run a [Django](https://www.djangoproject.com/)
-app on Google Container Engine. It was created to go with a slide deck created here.
-
-
-This project walks through setting up this project on a Google Container
-Engine Kubernetes cluster. These  instructions should
+While this project is written for Google Container Engine and Minikube,
+these  instructions should
 work on other Kubernetes platforms with some adjustments and should also
 deploy on other Kubernetes providers besides Google Container. Specifically,
 cluster creation steps, disks, load balancers,  cloud storage options, and
 node autoscalers should get replaced by their equivalents on your platform.
 
-This project demonstrates how to create a PostgreSQL database and Redis cache
-  within your cluster. It also contains an image to simulate load on your
-  cluster to demonstrate autoscaling. The app is inspired by the
-[PHP-Redis Guestbook example](https://github.com/kubernetes/kubernetes/tree/master/examples/guestbook/php-redis).
+While this repo focus on Google Container
+Engine and Minikube, these  instructions should
+work on other Kubernetes platforms with some adjustments. Specifically,
+cluster creation steps, disks, load balancers,  cloud storage options, and
+node autoscalers should get replaced by their equivalents on your platform.
 
 Please submit any code or doc issues to the issue tracker!
 
@@ -54,15 +62,17 @@ you build with `docker build` will then be available to Minkube. Note that
 the default imagePullPolicy will be 'Always' for any images without tags,
  so imagePullPolicy has been explicitly set to IfNotPresent for all the images.
 
-* We use [jinja2 CLI](https://github.com/mattrobenolt/jinja2-cli)
-  to template the configs, allowing Minikube or GKE specific parts to be
-  included conditionally.
+ * We use [jinja2 CLI](https://github.com/mattrobenolt/jinja2-cli)
+   to template the configs, allowing Minikube or GKE specific parts to be
+   included conditionally.
 
+
+will generate the GKE configs, see gke_jinja.json for example input parameters.
 
 ## Makefile
 
-Several commands listed below are provided in simpler form via the Makefile.
-Many of them use the GOOGLE_CLOUD_PROJECT environment variable, which will be picked up from your gcloud config. Make sure you set this to the correct project,
+Several commands listed below are provided in simpler form via the Makefile. Many of them use the GCLOUD_PROJECT
+environment variable, which will be picked up from your gcloud config. Make sure you set this to the correct project,
 
     gcloud config set project <your-project-id>
 
@@ -110,9 +120,10 @@ Compute, Datastore, Pub/Sub, Storage, and Logging. Note: enabling the APIs can t
 
         gcloud init
 
-1. Use gcloud to properly authenticate kubectl:
+1. Authenticate the CLI:
 
         gcloud auth application-default login
+
 
 1. Create a cluster for the bookshelf application
 
@@ -123,7 +134,7 @@ The get-credentials commands initializes the kubectl CLI tool with the cluster y
 
 Alternatively, you can use the Makefile:
 
-    make create-cluster
+        make create-cluster
 
 ### Minkube Prerequisites
 
@@ -154,7 +165,7 @@ or
 To delete the cluster and not get charged for continued use. Deleting resources you are not using is especially
 important if you run the autoscaling example to create many instances.
 
-## Running PostgreSQL
+## Running PostgreSQL and Redis
 
 The Django app depends on a PostgreSQL and Redis service. While this README explains how to deploy those services within
 the Kubernetes cluster. Looking in mysite/settings.py,
@@ -209,7 +220,7 @@ to build the image:
 
 For GKE, you would then push the image to [Google Container Registry](https://cloud.google.com/container-registry/).
 
-    gcloud docker push gcr.io/$GOOGLE_CLOUD_PROJECT/guestbook
+    gcloud docker push gcr.io/$GCLOUD_PROJECT/guestbook
 
 or alternatively:
 
@@ -291,8 +302,8 @@ Alternatively on Minikube, there is no external IP, so instead run:
 When you are ready to update the replication controller with a new image you built, the following command will do a
 rolling update
 
-    export GOOGLE_CLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
-    kubectl rolling-update frontend --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/guestbook:latest
+    export GCLOUD_PROJECT=$(gcloud config list project --format="value(core.project)")
+    kubectl rolling-update frontend --image=gcr.io/${GCLOUD_PROJECT}/guestbook:latest
 
 which can also be done with the `make update` command. If you encounter problems with the rolling-update, then
 check the events:
@@ -485,15 +496,6 @@ https://speakerdeck.com/waprin/deploying-django-on-kubernetes
 and you can watch the talk here:
 
 https://www.youtube.com/watch?v=HKKUgWuIZro
-
-There is now also an associated Medium series where I go into more detail about why you would run
-Django on Kubernetes and how to follow this README:
-
-https://medium.com/google-cloud/deploying-django-postgres-redis-containers-to-kubernetes-9ee28e7a146
-
-part 2:
-https://medium.com/@waprin/deploying-django-postgres-and-redis-containers-to-kubernetes-part-2-b287f7970a33
-
 
 ## Licensing
 
