@@ -146,7 +146,7 @@ installation instructions. Note that if you're using Docker for Mac, you
 
 Or set this permamently with:
 
-    minikube config set vm-driver=xhyve
+    minikube config set vm-driver xhyve
 
 ### A note about cost
 
