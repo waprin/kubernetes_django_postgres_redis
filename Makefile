@@ -48,7 +48,7 @@ template:
 
 .PHONY: deploy
 deploy: push template
-	kubectl apply -f kubernetes_config/guestbook/guestbook-gke.yaml
+	kubectl apply -f kubernetes_config/guestbook/guestbook_gke.yaml
 
 .PHONY: update
 update:
