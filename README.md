@@ -31,12 +31,6 @@ deploy on other Kubernetes providers besides Google Container. Specifically,
 cluster creation steps, disks, load balancers,  cloud storage options, and
 node autoscalers should get replaced by their equivalents on your platform.
 
-While this repo focus on Google Container
-Engine and Minikube, these  instructions should
-work on other Kubernetes platforms with some adjustments. Specifically,
-cluster creation steps, disks, load balancers,  cloud storage options, and
-node autoscalers should get replaced by their equivalents on your platform.
-
 Please submit any code or doc issues to the issue tracker!
 
 ## Container Engine vs Minikube
