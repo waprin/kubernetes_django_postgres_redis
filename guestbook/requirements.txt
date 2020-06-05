@@ -13,7 +13,7 @@
 # limitations under the License
 
 
-Django==1.9.1
+Django==1.11.29
 django-redis-cache==1.6.5
 gunicorn==19.4.5
 hiredis==0.2.0
